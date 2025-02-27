@@ -28,7 +28,6 @@ app.get("/", (req, res) => {
 
 console.log("🚀 Server is starting...");
 console.log("🔄 Connecting to MongoDB...");
-
 process.on("uncaughtException", (err) => {
     console.error("🛑 Uncaught Exception:", err);
     process.exit(1);

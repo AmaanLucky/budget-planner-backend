@@ -13,8 +13,8 @@ module.exports = function (req, res, next) {
     // ✅ Ensure token format is correct
     const tokenParts = authHeader.split(" ");
     if (tokenParts.length !== 2 || tokenParts[0] !== "Bearer") {
-        console.error("❌ Invalid token format:", authHeader);
-        return res.status(401).json({ error: "Invalid token format. Use 'Bearer <token>'" });
+        console.error("❌ Invalid token format");
+        return res.status(401).json({ error: "Invalid token format" });
     }
 
     const token = tokenParts[1];
@@ -26,6 +26,7 @@ module.exports = function (req, res, next) {
         next();
     } catch (error) {
         console.error("❌ Invalid Token:", error.message);
-        return res.status(401).json({ error: "Invalid or expired token" });
+        return res.status(401).json({ error: "Invalid token" });
     }
 };
+console.log("Auth Header:", authHeader);
