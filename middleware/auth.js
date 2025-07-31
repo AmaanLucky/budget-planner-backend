@@ -1,4 +1,4 @@
-import { verify } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 export default function (req, res, next) {
     console.log("🔹 Incoming Headers:", req.headers);
@@ -17,7 +17,7 @@ export default function (req, res, next) {
     const token = tokenParts[1];
 
     try {
-        const decoded = verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded.user;
         next();
     } 
