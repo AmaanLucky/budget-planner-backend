@@ -41,7 +41,7 @@ app.use("/expenses", expenseRoutes);
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
-    console.log(`Server running on port http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
 
 app.get("/", (req, res) => {
