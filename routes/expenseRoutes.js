@@ -1,9 +1,9 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const Expense = require("../models/expense");
-const auth = require("../middleware/auth"); // ✅ Ensure authentication
+import Expense from "../models/expense.js";
+import auth from "../middleware/auth.js"; 
 
-// ✅ Add an Expense (Only for Logged-in User)
+
 router.post("/add", auth, async (req, res) => {
     console.log("🔹 Incoming Headers:", req.headers); // ✅ Debugging
     console.log("🔹 Request Body:", req.body); // ✅ Debugging
@@ -32,7 +32,7 @@ router.post("/add", auth, async (req, res) => {
     }
 });
 
-// ✅ Get Expenses (Only for Logged-in User)
+
 router.get("/", auth, async (req, res) => {
     console.log("🔹 Fetching expenses for User ID:", req.user.id); // ✅ Debugging
 
@@ -46,7 +46,7 @@ router.get("/", auth, async (req, res) => {
     }
 });
 
-// ✅ Delete an Expense (Only if it belongs to the logged-in user)
+
 router.delete("/:id", auth, async (req, res) => {
     console.log("🔹 Delete request for Expense ID:", req.params.id);
 
@@ -69,7 +69,7 @@ router.delete("/:id", auth, async (req, res) => {
     }
 });
 
-// ✅ Update an Expense (Only if it belongs to the logged-in user)
+
 router.put("/:id", auth, async (req, res) => {
     console.log("🔹 Update request for Expense ID:", req.params.id);
     console.log("🔹 Updated Data:", req.body);
@@ -96,4 +96,4 @@ router.put("/:id", auth, async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

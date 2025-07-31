@@ -1,58 +1,48 @@
-const express = require("express");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { body, validationResult } = require("express-validator");
-const rateLimit = require("express-rate-limit"); // ✅ Rate Limiter for Login
-const nodemailer = require("nodemailer");
-const crypto = require("crypto");
-const User = require("../models/User");
-const ResetToken = require("../models/resetToken"); // ✅ OTP Model
-const auth = require("../middleware/auth");
+import express from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { body, validationResult } from "express-validator";
+import rateLimit from "express-rate-limit";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
+import User from "../models/User.js";
+import ResetToken from "../models/resetToken.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-// ✅ Configure Nodemailer for OTP Emails
 const transporter = nodemailer.createTransport({
-  service: "gmail", // Change if using another provider
+  service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER, // Stored in .env
+    user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
 
-// ✅ Rate Limiter for Login Attempts
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Allow 10 attempts per 15 minutes
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   message: { error: "Too many login attempts. Try again later." },
 });
 
-// ✅ Verify Token and Return User Data
 router.get("/verify", auth, async (req, res) => {
   try {
-    console.log("🔹 Received Token:", req.header("Authorization"));
-
     if (!req.user?.id) {
       return res.status(401).json({ error: "No user ID found in token" });
     }
 
     const user = await User.findById(req.user.id).select("-password");
     if (!user) {
-      console.error("❌ Token verification failed: User not found");
-      return res.status(401).json({ error: "Invalid token" });
+      return res.status(401).json({ error: "Token Verification Failed" });
     }
-
-    console.log("✅ Token verified successfully for:", user.email);
     res.json(user);
-  } catch (error) {
-    console.error("❌ Error verifying token:", error);
+  } 
+  catch (error) {
     res.status(500).json({ error: "Server error" });
   }
 });
 
-// ✅ User Signup
-router.post(
-  "/signup",
+router.post("/signup",
   [
     body("name", "Name is required").not().isEmpty(),
     body("email", "Enter a valid email").isEmail(),
@@ -65,38 +55,28 @@ router.post(
     }
 
     const { name, email, password } = req.body;
-
     try {
       let user = await User.findOne({ email });
       if (user) {
         return res.status(400).json({ error: "User already exists" });
       }
 
-      // 🔹 Hash Password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
-
-      // 🔹 Create New User
       user = new User({ name, email, password: hashedPassword });
       await user.save();
 
-      // 🔹 Generate JWT Token
       const payload = { user: { id: user.id, name: user.name } };
       const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
-
-      console.log("✅ New user registered:", email);
       res.status(201).json({ token, user: { id: user.id, name: user.name, email: user.email } });
-    } catch (error) {
-      console.error("❌ Signup Error:", error);
+    } 
+    catch (error) {
       res.status(500).json({ error: "Server error" });
     }
   }
 );
 
-// ✅ User Login with Rate Limiting
-router.post(
-  "/login",
-  loginLimiter,
+router.post("/login",loginLimiter,
   [
     body("email", "Enter a valid email").isEmail(),
     body("password", "Password is required").exists(),
@@ -116,7 +96,6 @@ router.post(
         return res.status(400).json({ error: "Invalid credentials" });
       }
 
-      // 🔹 Compare Password
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         console.log("❌ Incorrect password for:", email);
@@ -125,7 +104,6 @@ router.post(
 
       req.rateLimit?.resetKey?.(req.ip);
 
-      // 🔹 Generate JWT Token
       const payload = { user: { id: user.id, name: user.name } };
       const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
 
@@ -138,10 +116,8 @@ router.post(
   }
 );
 
-// ✅ Step 1: Request Password Reset (Send OTP)
 router.post("/request-password-reset", [body("email").isEmail()], async (req, res) => {
   const { email } = req.body;
-
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -163,14 +139,17 @@ router.post("/request-password-reset", [body("email").isEmail()], async (req, re
     await transporter.sendMail(mailOptions);
 
     res.json({ message: "OTP sent to email" });
-  } catch (error) {
-    console.error("❌ Error sending OTP:", error);
+  } 
+  catch (error) {
     res.status(500).json({ error: "Error sending OTP" });
   }
 });
 
-// ✅ Step 2: Verify OTP
-router.post("/verify-otp", [body("email").isEmail(), body("otp").isLength({ min: 6, max: 6 })], async (req, res) => {
+router.post("/verify-otp", 
+  [
+    body("email").isEmail(), body("otp").isLength({ min: 6, max: 6 })
+  ],
+  async (req, res) => {
   const { email, otp } = req.body;
 
   try {
@@ -178,15 +157,13 @@ router.post("/verify-otp", [body("email").isEmail(), body("otp").isLength({ min:
     if (!token || token.otp !== otp || token.expiresAt < Date.now()) {
       return res.status(400).json({ error: "Invalid or expired OTP" });
     }
-
     res.json({ message: "OTP verified successfully" });
-  } catch (error) {
-    console.error("❌ Error verifying OTP:", error);
+  } 
+  catch (error) {
     res.status(500).json({ error: "Error verifying OTP" });
   }
 });
 
-// ✅ Step 3: Reset Password
 router.post("/reset-password", [body("email").isEmail(), body("newPassword").isLength({ min: 6 })], async (req, res) => {
   const { email, newPassword } = req.body;
 
@@ -201,10 +178,10 @@ router.post("/reset-password", [body("email").isEmail(), body("newPassword").isL
     await ResetToken.deleteOne({ email });
 
     res.json({ message: "Password reset successfully" });
-  } catch (error) {
-    console.error("❌ Error resetting password:", error);
+  } 
+  catch (error) {
     res.status(500).json({ error: "Error resetting password" });
   }
 });
 
-module.exports = router;
+export default router;
