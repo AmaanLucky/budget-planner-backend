@@ -116,6 +116,29 @@ router.post("/login",loginLimiter,
   }
 );
 
+router.post('/demo-login', async (req, res) => {
+  try {
+    const demoUser = await User.findOne({ email: 'demo@user.com' });
+    if (!demoUser) return res.status(404).json({ error: 'Demo user not found' });
+
+    const token = jwt.sign({ id: demoUser._id }, process.env.JWT_SECRET, {
+      expiresIn: '1h'
+    });
+
+    res.status(200).json({
+      message: 'Demo login successful',
+      token,
+      user: {
+        id: demoUser._id,
+        name: demoUser.name,
+        email: demoUser.email
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Demo login failed' });
+  }
+});
+
 router.post("/request-password-reset", [body("email").isEmail()], async (req, res) => {
   const { email } = req.body;
   try {
